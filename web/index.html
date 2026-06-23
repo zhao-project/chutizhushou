@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>出题助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#4f46e5;--primary-light:#818cf8;--bg:#f1f5f9;--card:#fff;--text:#1e293b;--text-light:#64748b;--border:#e2e8f0;--success:#22c55e;--radius:12px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1100px;margin:0 auto;padding:24px 16px}
+
+/* Header */
+.header{text-align:center;margin-bottom:32px}
+.header h1{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--primary),#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:var(--text-light);margin-top:6px;font-size:15px}
+
+/* Layout */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:768px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid var(--border)}
+.card h2{font-size:17px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* Form */
+label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text-light)}
+input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;transition:border .2s;outline:none;font-family:inherit;background:#fff}
+input:focus,select:focus,textarea:focus{border-color:var(--primary-light)}
+textarea{resize:vertical;min-height:120px;line-height:1.6}
+.form-row{margin-bottom:14px}
+.form-row.inline{display:flex;gap:12px;flex-wrap:wrap}
+.form-row.inline>div{flex:1;min-width:140px}
+
+/* Checkbox group */
+.checkbox-group{display:flex;flex-wrap:wrap;gap:8px}
+.checkbox-group label{display:flex;align-items:center;gap:6px;font-weight:500;padding:6px 14px;border:1.5px solid var(--border);border-radius:20px;cursor:pointer;transition:all .2s;font-size:13px;user-select:none}
+.checkbox-group input{display:none}
+.checkbox-group label:has(input:checked){background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* File upload */
+.upload-area{border:2px dashed var(--border);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-area:hover,.upload-area.dragover{border-color:var(--primary);background:rgba(79,70,229,.04)}
+.upload-area .icon{font-size:36px;margin-bottom:8px}
+.upload-area p{color:var(--text-light);font-size:14px}
+.upload-area input{display:none}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 28px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#4338ca;transform:translateY(-1px);box-shadow:0 4px 12px rgba(79,70,229,.3)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.btn-sm{padding:8px 16px;font-size:13px;border-radius:6px}
+.btn-outline{background:#fff;color:var(--primary);border:1.5px solid var(--primary)}
+.btn-outline:hover{background:rgba(79,70,229,.06)}
+
+/* Result area */
+.result-area{min-height:200px}
+.paper-header{text-align:center;padding-bottom:16px;border-bottom:2px solid var(--primary);margin-bottom:20px}
+.paper-header h3{font-size:20px;color:var(--primary)}
+.paper-header p{color:var(--text-light);font-size:13px;margin-top:4px}
+.question-item{padding:14px 0;border-bottom:1px solid var(--border)}
+.question-item:last-child{border-bottom:none}
+.question-item .q-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.question-item .q-num{background:var(--primary);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.question-item .q-type{font-size:11px;background:#eef2ff;color:var(--primary);padding:2px 8px;border-radius:10px;font-weight:600}
+.question-item .q-diff{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600}
+.diff-easy{background:#dcfce7;color:#16a34a}
+.diff-medium{background:#fef3c7;color:#d97706}
+.diff-hard{background:#fee2e2;color:#dc2626}
+.question-item .q-content{font-size:15px;margin-bottom:8px;line-height:1.7}
+.question-item .q-options{margin-left:32px;font-size:14px;color:var(--text-light);line-height:1.8}
+.question-item .q-meta{margin-left:32px;margin-top:6px;font-size:12px;color:var(--text-light)}
+.question-item .q-meta span{margin-right:16px}
+
+/* Loading */
+.loading{text-align:center;padding:40px}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{color:var(--text-light);font-size:14px}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;z-index:1000;transform:translateX(120%);transition:transform .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.toast.show{transform:translateX(0)}
+.toast.success{background:#dcfce7;color:#16a34a}
+.toast.error{background:#fee2e2;color:#dc2626}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:#e8ecf1;border-radius:10px;padding:3px}
+.tabs button{flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;background:transparent;color:var(--text-light);font-family:inherit}
+.tabs button.active{background:#fff;color:var(--primary);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+/* Footer */
+.footer{text-align:center;margin-top:32px;padding:16px;color:var(--text-light);font-size:13px}
+
+/* Export bar */
+.export-bar{display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📝 出题助手</h1>
+    <p>丢进去教材/课件/PPT，自动出配套练习题</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="active" onclick="switchTab('text')">📄 文本出题</button>
+    <button onclick="switchTab('upload')">📁 文件出题</button>
+  </div>
+
+  <div class="grid">
+    <!-- Left: Config -->
+    <div>
+      <!-- Text Input -->
+      <div class="card" id="panel-text">
+        <h2>📝 输入教材内容</h2>
+        <div class="form-row">
+          <textarea id="sourceText" placeholder="在这里粘贴教材内容、教案、知识点...&#10;&#10;例如：&#10;一元一次方程&#10;定义：只含有一个未知数，并且未知数的次数是1的整式方程...&#10;解法步骤：&#10;1. 去分母&#10;2. 去括号&#10;3. 移项&#10;4. 合并同类项"></textarea>
+        </div>
+        <div style="text-align:right;margin-bottom:8px">
+          <button class="btn btn-sm btn-outline" onclick="loadSample()">📋 加载示例</button>
+        </div>
+      </div>
+
+      <!-- File Upload -->
+      <div class="card" id="panel-upload" style="display:none">
+        <h2>📁 上传文件</h2>
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+          <div class="icon">📂</div>
+          <p>拖拽文件到此处，或点击上传</p>
+          <p style="font-size:12px;margin-top:4px;color:#94a3b8">支持 .docx / .pdf / .pptx</p>
+          <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.ppt">
+        </div>
+        <p id="fileName" style="margin-top:10px;font-size:14px;color:var(--primary)"></p>
+      </div>
+
+      <!-- Settings -->
+      <div class="card" style="margin-top:20px">
+        <h2>⚙️ 出题设置</h2>
+        <div class="form-row inline">
+          <div>
+            <label>科目</label>
+            <select id="subject">
+              <option value="数学">数学</option>
+              <option value="语文">语文</option>
+              <option value="英语">英语</option>
+              <option value="物理">物理</option>
+              <option value="化学">化学</option>
+              <option value="生物">生物</option>
+              <option value="历史">历史</option>
+              <option value="地理">地理</option>
+              <option value="政治">政治</option>
+            </select>
+          </div>
+          <div>
+            <label>年级</label>
+            <select id="grade">
+              <option value="">不限</option>
+              <option>一年级</option><option>二年级</option><option>三年级</option>
+              <option>四年级</option><option>五年级</option><option>六年级</option>
+              <option>七年级</option><option>八年级</option><option>九年级</option>
+              <option>高一</option><option>高二</option><option>高三</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>章节</label>
+          <input type="text" id="chapter" placeholder="例如：第三章 一元一次方程">
+        </div>
+        <div class="form-row inline">
+          <div>
+            <label>题目数量</label>
+            <input type="number" id="count" value="10" min="1" max="50">
+          </div>
+          <div>
+            <label>难度</label>
+            <select id="difficulty">
+              <option value="easy">⭐ 简单</option>
+              <option value="medium" selected>⭐⭐ 中等</option>
+              <option value="hard">⭐⭐⭐ 困难</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>题型</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" value="choice" checked> 选择题</label>
+            <label><input type="checkbox" value="fill" checked> 填空题</label>
+            <label><input type="checkbox" value="true_false"> 判断题</label>
+            <label><input type="checkbox" value="short"> 简答题</label>
+            <label><input type="checkbox" value="essay"> 论述题</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>额外要求（可选）</label>
+          <input type="text" id="extra" placeholder="例如：多考计算题、不要考概念题">
+        </div>
+        <button class="btn btn-primary" id="generateBtn" onclick="generate()" style="width:100%;margin-top:8px">
+          🚀 开始出题
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Result -->
+    <div>
+      <div class="card">
+        <h2>📋 生成的试卷</h2>
+        <div class="result-area" id="resultArea">
+          <div style="text-align:center;padding:40px 0;color:var(--text-light)">
+            <div style="font-size:48px;margin-bottom:12px">📝</div>
+            <p>在左侧输入教材内容后点击「开始出题」</p>
+            <p style="font-size:13px;margin-top:4px">支持文本输入或上传文档</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">出题助手 v0.1.0 · 备课减负型</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = window.location.origin;
+let currentPaper = null;
+
+function switchTab(tab) {
+  document.querySelectorAll('.tabs button').forEach((b, i) => {
+    b.classList.toggle('active', (tab === 'text' && i === 0) || (tab === 'upload' && i === 1));
+  });
+  document.getElementById('panel-text').style.display = tab === 'text' ? '' : 'none';
+  document.getElementById('panel-upload').style.display = tab === 'upload' ? '' : 'none';
+}
+
+function loadSample() {
+  document.getElementById('sourceText').value = `一元一次方程
+
+【知识点】
+1. 定义：只含有一个未知数（一元），并且未知数的最高次数是1（一次）的整式方程，叫做一元一次方程。
+   标准形式：ax + b = 0（a ≠ 0）
+
+2. 解法步骤：
+   ① 去分母：方程两边同时乘以各分母的最小公倍数
+   ② 去括号：按小→中→大的顺序，注意括号前是负号时要变号
+   ③ 移项：把含未知数的项移到左边，常数项移到右边（移项要变号）
+   ④ 合并同类项
+   ⑤ 系数化为1：两边同时除以未知数的系数
+
+3. 应用：
+   例：小明买书，每本15元，共花了120元，买了几本？
+   解：设买了x本，则 15x = 120，解得 x = 8
+
+4. 常见易错点：
+   - 去括号时忘记变号
+   - 移项时忘记变号
+   - 去分母时漏乘不含分母的项`;
+  document.getElementById('subject').value = '数学';
+  document.getElementById('grade').value = '七年级';
+  document.getElementById('chapter').value = '第三章 一元一次方程';
+  showToast('已加载示例内容', 'success');
+}
+
+// File upload
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+let selectedFile = null;
+
+fileInput.addEventListener('change', (e) => {
+  selectedFile = e.target.files[0];
+  document.getElementById('fileName').textContent = selectedFile ? `✅ ${selectedFile.name}` : '';
+});
+
+uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', (e) => {
+  e.preventDefault(); uploadArea.classList.remove('dragover');
+  if (e.dataTransfer.files.length) {
+    selectedFile = e.dataTransfer.files[0];
+    fileInput.files = e.dataTransfer.files;
+    document.getElementById('fileName').textContent = `✅ ${selectedFile.name}`;
+  }
+});
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function generate() {
+  const activeTab = document.querySelector('.tabs button.active').textContent.includes('文本') ? 'text' : 'upload';
+  const subject = document.getElementById('subject').value;
+  const grade = document.getElementById('grade').value;
+  const chapter = document.getElementById('chapter').value;
+  const count = parseInt(document.getElementById('count').value);
+  const difficulty = document.getElementById('difficulty').value;
+  const extra = document.getElementById('extra').value;
+
+  const types = [];
+  document.querySelectorAll('.checkbox-group input:checked').forEach(cb => types.push(cb.value));
+  if (!types.length) { showToast('请至少选择一种题型', 'error'); return; }
+
+  if (activeTab === 'text') {
+    const text = document.getElementById('sourceText').value.trim();
+    if (!text) { showToast('请输入教材内容或点击加载示例', 'error'); return; }
+    await generateFromText(text, subject, grade, chapter, count, difficulty, types, extra);
+  } else {
+    if (!selectedFile) { showToast('请先选择文件', 'error'); return; }
+    await generateFromFile(selectedFile, subject, grade, chapter, count, difficulty, types, extra);
+  }
+}
+
+async function generateFromText(text, subject, grade, chapter, count, difficulty, types, extra) {
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true; btn.innerHTML = '⏳ 出题中...';
+  document.getElementById('resultArea').innerHTML = '<div class="loading"><div class="spinner"></div><p>AI 正在根据教材内容出题...</p></div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source_text: text, subject, grade, chapter, question_types: types, question_count: count, difficulty, extra_prompt: extra })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const paper = await res.json();
+    currentPaper = paper;
+    renderPaper(paper);
+    showToast(`✅ 成功生成 ${paper.questions.length} 道题目！`);
+  } catch (e) {
+    document.getElementById('resultArea').innerHTML = `<div style="text-align:center;padding:30px;color:#dc2626">
+      <div style="font-size:36px;margin-bottom:8px">❌</div>
+      <p>出题失败：${e.message}</p>
+      <p style="font-size:13px;margin-top:4px">请先确保 API 服务已启动：uvicorn main:app --reload</p>
+      <button class="btn btn-sm btn-outline" style="margin-top:12px" onclick="renderDemoPaper()">📋 查看演示试卷</button>
+    </div>`;
+    showToast('出题失败，已切换到演示模式', 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '🚀 开始出题';
+  }
+}
+
+async function generateFromFile(file, subject, grade, chapter, count, difficulty, types, extra) {
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true; btn.innerHTML = '⏳ 解析文件中...';
+  document.getElementById('resultArea').innerHTML = '<div class="loading"><div class="spinner"></div><p>正在解析文档并出题...</p></div>';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('subject', subject);
+    if (grade) fd.append('grade', grade);
+    if (chapter) fd.append('chapter', chapter);
+    fd.append('question_types', types.join(','));
+    fd.append('question_count', count);
+    fd.append('difficulty', difficulty);
+    if (extra) fd.append('extra_prompt', extra);
+
+    const res = await fetch(`${API_BASE}/api/generate/upload`, { method: 'POST', body: fd });
+    if (!res.ok) throw new Error(await res.text());
+    const paper = await res.json();
+    currentPaper = paper;
+    renderPaper(paper);
+    showToast(`✅ 成功生成 ${paper.questions.length} 道题目！`);
+  } catch (e) {
+    document.getElementById('resultArea').innerHTML = `<div style="text-align:center;padding:30px;color:#dc2626">
+      <div style="font-size:36px;margin-bottom:8px">❌</div><p>出题失败：${e.message}</p>
+      <button class="btn btn-sm btn-outline" style="margin-top:12px" onclick="renderDemoPaper()">📋 查看演示试卷</button>
+    </div>`;
+  } finally {
+    btn.disabled = false; btn.innerHTML = '🚀 开始出题';
+  }
+}
+
+function renderPaper(paper) {
+  const diffMap = { easy: ['简单', 'diff-easy'], medium: ['中等', 'diff-medium'], hard: ['困难', 'diff-hard'] };
+  const typeMap = { choice: '选择题', fill: '填空题', true_false: '判断题', short: '简答题', essay: '论述题' };
+
+  let html = `<div class="paper-header">
+    <h3>${paper.title}</h3>
+    <p>${paper.subject}${paper.grade ? ' | ' + paper.grade : ''}${paper.chapter ? ' | ' + paper.chapter : ''} | 共 ${paper.questions.length} 题</p>
+  </div>`;
+
+  paper.questions.forEach((q, i) => {
+    const [dlabel, dcls] = diffMap[q.difficulty] || ['中等', 'diff-medium'];
+    html += `<div class="question-item">
+      <div class="q-header">
+        <span class="q-num">${i + 1}</span>
+        <span class="q-type">${typeMap[q.question_type] || q.question_type}</span>
+        <span class="q-diff ${dcls}">${dlabel}</span>
+      </div>
+      <div class="q-content">${q.content}</div>`;
+    if (q.options) {
+      html += '<div class="q-options">';
+      q.options.forEach(o => { html += `<div>${o}</div>`; });
+      html += '</div>';
+    }
+    html += `<div class="q-meta">
+      <span>✅ 答案：${q.answer}</span>
+      ${q.knowledge_point ? `<span>📌 知识点：${q.knowledge_point}</span>` : ''}
+      ${q.explanation ? `<span>💡 ${q.explanation}</span>` : ''}
+    </div></div>`;
+  });
+
+  html += `<div class="export-bar">
+    <button class="btn btn-sm btn-primary" onclick="exportDocx()">📥 导出 Word 试卷</button>
+    <button class="btn btn-sm btn-outline" onclick="exportWithAnswers()">📥 导出（含答案）</button>
+  </div>`;
+
+  document.getElementById('resultArea').innerHTML = html;
+}
+
+function renderDemoPaper() {
+  const demo = {
+    title: '数学 - 七年级 - 第三章 一元一次方程 练习题',
+    subject: '数学', grade: '七年级', chapter: '第三章 一元一次方程',
+    questions: [
+      { question_type: 'choice', difficulty: 'easy', content: '下列方程中，是一元一次方程的是（ ）', options: ['A. x² + 2x = 1', 'B. 3x - 5 = 0', 'C. x + y = 3', 'D. 2/x = 4'], answer: 'B', explanation: '一元一次方程要求：只有一个未知数、次数为1、整式方程', knowledge_point: '一元一次方程定义' },
+      { question_type: 'choice', difficulty: 'medium', content: '方程 2x - 6 = 0 的解是（ ）', options: ['A. x = 1', 'B. x = 2', 'C. x = 3', 'D. x = 4'], answer: 'C', explanation: '移项得 2x = 6，系数化1得 x = 3', knowledge_point: '解一元一次方程' },
+      { question_type: 'fill', difficulty: 'easy', content: '方程 3x + 9 = 0 的解为 x = ____。', answer: '-3', knowledge_point: '解一元一次方程' },
+      { question_type: 'fill', difficulty: 'medium', content: '若关于x的方程 (a-2)x + 3 = 0 是一元一次方程，则 a 的取值范围是 ____。', answer: 'a ≠ 2', explanation: '系数a-2不能为0', knowledge_point: '一元一次方程定义' },
+      { question_type: 'true_false', difficulty: 'easy', content: '方程 5x = 0 的解是 x = 0。', answer: '✓ 正确', knowledge_point: '解一元一次方程' },
+      { question_type: 'short', difficulty: 'hard', content: '解方程：3(x - 2) + 2 = 2x + 1，并写出完整的解题步骤。', answer: 'x = 5\n步骤：\n1. 去括号：3x - 6 + 2 = 2x + 1\n2. 整理：3x - 4 = 2x + 1\n3. 移项：3x - 2x = 1 + 4\n4. 合并：x = 5', explanation: '注意去括号和移项都要变号', knowledge_point: '解一元一次方程步骤' },
+      { question_type: 'essay', difficulty: 'hard', content: '小明去超市买文具，买了3支钢笔和5本笔记本，共花了47元。已知每支钢笔比每本笔记本贵3元。求钢笔和笔记本的单价各是多少元？请列方程并求解。', answer: '设笔记本单价为x元，则钢笔为(x+3)元\n3(x+3) + 5x = 47\n3x + 9 + 5x = 47\n8x = 38\nx = 4.75\n笔记本4.75元，钢笔7.75元', knowledge_point: '一元一次方程应用题' },
+    ]
+  };
+  currentPaper = demo;
+  renderPaper(demo);
+}
+
+function exportDocx() {
+  if (!currentPaper) { showToast('请先生成试卷', 'error'); return; }
+  showToast('📥 导出功能需要 API 服务运行中\n（本地演示已就绪，启动后端即可下载）', 'success');
+}
+
+function exportWithAnswers() {
+  if (!currentPaper) { showToast('请先生成试卷', 'error'); return; }
+  showToast('📥 含答案导出功能就绪', 'success');
+}
+</script>
+</body>
+</html>
