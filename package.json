@@ -1,0 +1,12 @@
+{
+  "name": "chutizhushou",
+  "version": "0.1.0",
+  "description": "出题助手 - 备课减负型，自动出配套练习题",
+  "main": "main.py",
+  "scripts": {
+    "start": "uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
+    "test": "pytest tests/ -v"
+  },
+  "keywords": ["education", "exam", "generator"],
+  "license": "AGPL-3.0-or-later"
+}
